@@ -72,18 +72,38 @@ jobs:
           CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
           python -m pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
           python -m pip install -e .
+          python -m pip install "pytest>=8.3,<9"
           python -m pip check
       - name: Initialize Airflow metadata database
         run: airflow db migrate
       - name: Validate DAG imports
         shell: bash
         run: |
-          airflow dags list-import-errors --output=json > /tmp/import-errors.json
+          airflow dags list-import-errors --local --output=json > /tmp/import-errors.log
           python - <<'PY'
           import json
           from pathlib import Path
 
-          errors = json.loads(Path("/tmp/import-errors.json").read_text())
+          text = Path("/tmp/import-errors.log").read_text(encoding="utf-8")
+          decoder = json.JSONDecoder()
+          errors = None
+
+          for index, character in enumerate(text):
+              if character != "[":
+                  continue
+              try:
+                  candidate, _ = decoder.raw_decode(text[index:])
+              except json.JSONDecodeError:
+                  continue
+              if isinstance(candidate, list):
+                  errors = candidate
+                  break
+
+          if errors is None:
+              raise SystemExit(
+                  "Airflow import-error command did not emit a JSON list. "
+                  f"Raw output: {text!r}"
+              )
           if errors:
               raise SystemExit(f"Airflow DAG import errors: {errors}")
           PY
