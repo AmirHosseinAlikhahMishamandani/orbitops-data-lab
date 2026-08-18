@@ -55,19 +55,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     paths = AppPaths(args.data_dir)
 
     if args.command == "generate":
-        result = generate_telemetry(
+        generation = generate_telemetry(
             paths,
             satellites=args.satellites,
             records=args.records,
             seed=args.seed,
             output=args.output,
         )
-        print(f"Generated {result.records:,} records -> {result.output}")
+        print(f"Generated {generation.records:,} records -> {generation.output}")
         return 0
 
     if args.command == "ingest":
         try:
-            result = process_telemetry(paths, args.path)
+            processing = process_telemetry(paths, args.path)
         except NoValidTelemetryError as error:
             print(
                 _format_ingestion(
@@ -82,16 +82,16 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         print(
             _format_ingestion(
-                result.received,
-                result.valid,
-                result.invalid,
-                result.duplicates,
+                processing.received,
+                processing.valid,
+                processing.invalid,
+                processing.duplicates,
             )
         )
-        print(f"Parquet: {result.parquet}")
-        print(f"DuckDB:  {result.database}")
-        print(f"Anomalies: {result.anomalies:,}")
-        print(json.dumps({"anomalies_by_metric": result.anomalies_by_metric}, indent=2))
+        print(f"Parquet: {processing.parquet}")
+        print(f"DuckDB:  {processing.database}")
+        print(f"Anomalies: {processing.anomalies:,}")
+        print(json.dumps({"anomalies_by_metric": processing.anomalies_by_metric}, indent=2))
         return 0
 
     try:
