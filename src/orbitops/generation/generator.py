@@ -44,9 +44,7 @@ class TelemetryGenerator:
 
     def records(self) -> Iterator[RawRecord]:
         """Yield raw records, occasionally including malformed or retransmitted events."""
-        base_time = datetime(2025, 1, 1, tzinfo=UTC) + timedelta(
-            days=self.config.seed % 365
-        )
+        base_time = datetime(2025, 1, 1, tzinfo=UTC) + timedelta(days=self.config.seed % 365)
         previous: RawRecord | None = None
 
         for index in range(self.config.records):
