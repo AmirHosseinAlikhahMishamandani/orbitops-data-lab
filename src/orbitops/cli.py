@@ -6,13 +6,13 @@ import logging
 from collections.abc import Sequence
 from pathlib import Path
 
-from orbitops.analytics.anomalies import ThresholdAnomalyDetector
-from orbitops.analytics.metrics import anomaly_counts
 from orbitops.config import AppPaths
-from orbitops.generation.generator import GeneratorConfig, TelemetryGenerator
-from orbitops.ingestion.pipeline import ingest_jsonl
-from orbitops.storage.duckdb_repository import DuckDBTelemetryRepository, write_parquet
-from orbitops.transformation.telemetry import transform_records
+from orbitops.workflows.telemetry import (
+    NoValidTelemetryError,
+    generate_telemetry,
+    process_telemetry,
+    read_fleet_summary,
+)
 
 LOGGER = logging.getLogger("orbitops")
 
@@ -53,64 +53,61 @@ def main(argv: Sequence[str] | None = None) -> int:
         format="%(levelname)s %(message)s",
     )
     paths = AppPaths(args.data_dir)
-    paths.ensure()
 
     if args.command == "generate":
-        output = args.output or paths.raw_dir / "telemetry.jsonl"
-        config = GeneratorConfig(satellites=args.satellites, records=args.records, seed=args.seed)
-        count = TelemetryGenerator(config).write_jsonl(output)
-        print(f"Generated {count:,} records -> {output}")
+        result = generate_telemetry(
+            paths,
+            satellites=args.satellites,
+            records=args.records,
+            seed=args.seed,
+            output=args.output,
+        )
+        print(f"Generated {result.records:,} records -> {result.output}")
         return 0
 
     if args.command == "ingest":
-        result = ingest_jsonl(args.path)
-        rows = transform_records(result.records)
-        anomalies = ThresholdAnomalyDetector().detect(result.records)
-        if not rows:
+        try:
+            result = process_telemetry(paths, args.path)
+        except NoValidTelemetryError as error:
             print(
                 _format_ingestion(
-                    result.stats.received,
-                    result.stats.valid,
-                    result.stats.invalid,
-                    result.stats.duplicates,
+                    error.stats.received,
+                    error.stats.valid,
+                    error.stats.invalid,
+                    error.stats.duplicates,
                 )
             )
             LOGGER.error("No valid telemetry records to persist.")
             return 3
-        parquet_path = paths.processed_dir / "telemetry.parquet"
-        write_parquet(rows, parquet_path)
-        DuckDBTelemetryRepository(paths.database).replace(rows)
+
         print(
             _format_ingestion(
-                result.stats.received,
-                result.stats.valid,
-                result.stats.invalid,
-                result.stats.duplicates,
+                result.received,
+                result.valid,
+                result.invalid,
+                result.duplicates,
             )
         )
-        print(f"Parquet: {parquet_path}")
-        print(f"DuckDB:  {paths.database}")
-        print(f"Anomalies: {len(anomalies):,}")
-        print(json.dumps({"anomalies_by_metric": anomaly_counts(anomalies)}, indent=2))
+        print(f"Parquet: {result.parquet}")
+        print(f"DuckDB:  {result.database}")
+        print(f"Anomalies: {result.anomalies:,}")
+        print(json.dumps({"anomalies_by_metric": result.anomalies_by_metric}, indent=2))
         return 0
 
-    repository = DuckDBTelemetryRepository(paths.database)
-    if not paths.database.exists():
+    try:
+        summary = read_fleet_summary(
+            paths,
+            satellite_id=args.satellite if args.command == "analyze" else None,
+        )
+    except FileNotFoundError:
         LOGGER.error("No local database. Run 'orbitops ingest <path>' first.")
         return 2
 
     if args.command == "status":
-        print(
-            json.dumps(
-                {"database": str(paths.database), "rows": repository.row_count()},
-                indent=2,
-            )
-        )
+        rows = sum(int(row["records"]) for row in summary)
+        print(json.dumps({"database": str(paths.database), "rows": rows}, indent=2))
         return 0
 
-    summary = repository.fleet_summary()
-    if args.satellite:
-        summary = [row for row in summary if row["satellite_id"] == args.satellite]
     print(json.dumps({"fleet": summary}, indent=2, default=str))
     return 0
 
