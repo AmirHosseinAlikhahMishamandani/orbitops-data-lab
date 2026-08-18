@@ -52,3 +52,11 @@ def transform_record(record: TelemetryRecord) -> AnalyticalRow:
 def transform_records(records: Iterable[TelemetryRecord]) -> list[AnalyticalRow]:
     """Transform records without mutating validated domain objects."""
     return [transform_record(record) for record in records]
+
+
+class LocalTelemetryTransformer:
+    """In-process implementation of the telemetry transformation boundary."""
+
+    def transform(self, records: Iterable[TelemetryRecord]) -> list[AnalyticalRow]:
+        """Apply the existing pure-Python transformation rules."""
+        return transform_records(records)

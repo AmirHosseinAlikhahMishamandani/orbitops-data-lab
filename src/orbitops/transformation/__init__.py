@@ -1,5 +1,15 @@
-"""Pure transformations from trusted domain records to analytical rows."""
+"""Transform trusted telemetry into analytics-ready representations."""
 
-from orbitops.transformation.telemetry import transform_record, transform_records
+from orbitops.transformation.contracts import TelemetryTransformer
+from orbitops.transformation.telemetry import (
+    LocalTelemetryTransformer,
+    transform_record,
+    transform_records,
+)
 
-__all__ = ["transform_record", "transform_records"]
+__all__ = [
+    "LocalTelemetryTransformer",
+    "TelemetryTransformer",
+    "transform_record",
+    "transform_records",
+]
