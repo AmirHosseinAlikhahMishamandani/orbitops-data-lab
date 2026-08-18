@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "orbitops-data-lab"
-version = "0.1.0"
+version = "0.2.0"
 description = "From raw satellite telemetry to trusted, queryable, anomaly-aware data."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -17,6 +17,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+spark = [
+  "pyspark>=4.1,<4.2",
+]
 dev = [
   "mypy>=1.13,<2",
   "pytest>=8.3,<9",
@@ -33,7 +36,10 @@ packages = ["src/orbitops"]
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config -ra"
 testpaths = ["tests"]
-markers = ["integration: end-to-end tests that exercise storage dependencies"]
+markers = [
+  "integration: end-to-end tests that exercise storage dependencies",
+  "spark: tests that require the optional PySpark runtime and Java",
+]
 
 [tool.coverage.run]
 branch = true
