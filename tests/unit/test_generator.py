@@ -20,7 +20,8 @@ def test_zero_records_produces_empty_sequence() -> None:
 
 def test_write_jsonl_creates_parseable_lines(tmp_path: Path) -> None:
     destination = tmp_path / "raw" / "telemetry.jsonl"
-    count = TelemetryGenerator(GeneratorConfig(records=3, invalid_probability=0)).write_jsonl(destination)
+    generator = TelemetryGenerator(GeneratorConfig(records=3, invalid_probability=0))
+    count = generator.write_jsonl(destination)
 
     rows = [json.loads(line) for line in destination.read_text().splitlines()]
     assert count == 3
@@ -28,7 +29,10 @@ def test_write_jsonl_creates_parseable_lines(tmp_path: Path) -> None:
     assert rows[0]["satellite_id"].startswith("SAT-")
 
 
-@pytest.mark.parametrize("field", ["anomaly_probability", "invalid_probability", "duplicate_probability"])
+@pytest.mark.parametrize(
+    "field",
+    ["anomaly_probability", "invalid_probability", "duplicate_probability"],
+)
 def test_probabilities_must_be_bounded(field: str) -> None:
     kwargs = {field: 1.1}
     with pytest.raises(ValueError, match=field):

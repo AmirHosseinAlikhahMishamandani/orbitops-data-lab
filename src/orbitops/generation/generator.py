@@ -1,11 +1,11 @@
 """Deterministic synthetic telemetry generator used by demos and tests."""
 
+import json
+import random
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-import random
 from typing import Any
 
 from orbitops.models.telemetry import OperatingMode
@@ -44,7 +44,7 @@ class TelemetryGenerator:
 
     def records(self) -> Iterator[RawRecord]:
         """Yield raw records, occasionally including malformed or retransmitted events."""
-        base_time = datetime(2025, 1, 1, tzinfo=timezone.utc) + timedelta(
+        base_time = datetime(2025, 1, 1, tzinfo=UTC) + timedelta(
             days=self.config.seed % 365
         )
         previous: RawRecord | None = None
@@ -94,7 +94,10 @@ class TelemetryGenerator:
         return {
             "satellite_id": f"SAT-{satellite_number:03d}",
             "timestamp": timestamp.isoformat(),
-            "battery_voltage": round(8.25 - age_factor * 0.4 + self._random.uniform(-0.08, 0.08), 3),
+            "battery_voltage": round(
+                8.25 - age_factor * 0.4 + self._random.uniform(-0.08, 0.08),
+                3,
+            ),
             "battery_temperature": round(self._random.uniform(12.0, 38.0), 2),
             "solar_panel_current": round(self._random.uniform(0.5, 5.5), 3),
             "cpu_temperature": round(cpu_temperature, 2),

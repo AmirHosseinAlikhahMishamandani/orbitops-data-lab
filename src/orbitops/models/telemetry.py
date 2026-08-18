@@ -1,8 +1,8 @@
 """Strongly typed spacecraft telemetry domain objects."""
 
-from datetime import datetime, timezone
-from enum import StrEnum
 import re
+from datetime import UTC, datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -51,10 +51,10 @@ class TelemetryRecord(BaseModel):
         """Reject naive or implausibly future timestamps."""
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("timestamp must be timezone-aware")
-        now = datetime.now(timezone.utc)
-        if value.astimezone(timezone.utc) > now:
+        now = datetime.now(UTC)
+        if value.astimezone(UTC) > now:
             raise ValueError("timestamp cannot be in the future")
-        return value.astimezone(timezone.utc)
+        return value.astimezone(UTC)
 
     @property
     def event_key(self) -> tuple[str, datetime]:

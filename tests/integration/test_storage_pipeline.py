@@ -12,7 +12,10 @@ pytestmark = pytest.mark.integration
 
 def test_generate_ingest_transform_store_query(tmp_path: Path) -> None:
     raw = tmp_path / "raw.jsonl"
-    TelemetryGenerator(GeneratorConfig(satellites=2, records=20, invalid_probability=0)).write_jsonl(raw)
+    generator = TelemetryGenerator(
+        GeneratorConfig(satellites=2, records=20, invalid_probability=0)
+    )
+    generator.write_jsonl(raw)
 
     ingestion = ingest_jsonl(raw)
     rows = transform_records(ingestion.records)

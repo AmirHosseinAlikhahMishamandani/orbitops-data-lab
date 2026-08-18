@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
@@ -9,7 +9,7 @@ from orbitops.models.telemetry import OperatingMode, TelemetryRecord
 def valid_record(**overrides: object) -> dict[str, object]:
     data: dict[str, object] = {
         "satellite_id": "SAT-001",
-        "timestamp": datetime.now(timezone.utc) - timedelta(minutes=1),
+        "timestamp": datetime.now(UTC) - timedelta(minutes=1),
         "battery_voltage": 7.8,
         "battery_temperature": 22.0,
         "solar_panel_current": 2.1,
@@ -48,5 +48,5 @@ def test_invalid_domain_values_are_rejected(field: str, value: object) -> None:
 def test_future_timestamp_is_rejected() -> None:
     with pytest.raises(ValidationError, match="future"):
         TelemetryRecord.model_validate(
-            valid_record(timestamp=datetime.now(timezone.utc) + timedelta(days=1))
+            valid_record(timestamp=datetime.now(UTC) + timedelta(days=1))
         )
