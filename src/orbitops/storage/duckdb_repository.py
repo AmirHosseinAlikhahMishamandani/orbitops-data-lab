@@ -26,7 +26,7 @@ class DuckDBTelemetryRepository:
     def replace(self, rows: Sequence[dict[str, Any]]) -> int:
         """Atomically replace the telemetry table from validated analytical rows."""
         import duckdb
-        import pyarrow as pa  # type: ignore[import-untyped]
+        import pyarrow as pa
 
         table = pa.Table.from_pylist(list(rows))
         with duckdb.connect(str(self.database)) as connection:
