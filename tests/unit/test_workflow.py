@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 from orbitops.config import AppPaths
-from orbitops.workflows.telemetry import NoValidTelemetryError, generate_telemetry, process_telemetry
+from orbitops.workflows.telemetry import (
+    NoValidTelemetryError,
+    generate_telemetry,
+    process_telemetry,
+)
 
 
 def test_generate_workflow_returns_small_metadata_payload(tmp_path: Path) -> None:
