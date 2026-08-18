@@ -1,14 +1,19 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from orbitops.models.telemetry import TelemetryRecord
-from orbitops.transformation.telemetry import battery_health, signal_quality, thermal_status, transform_record
+from orbitops.transformation.telemetry import (
+    battery_health,
+    signal_quality,
+    thermal_status,
+    transform_record,
+)
 
 
 def record() -> TelemetryRecord:
     return TelemetryRecord.model_validate(
         {
             "satellite_id": "SAT-001",
-            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=1),
+            "timestamp": datetime.now(UTC) - timedelta(minutes=1),
             "battery_voltage": 7.8,
             "battery_temperature": 20.0,
             "solar_panel_current": 2.0,

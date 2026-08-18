@@ -3,8 +3,8 @@
 import argparse
 import json
 import logging
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from orbitops.analytics.anomalies import ThresholdAnomalyDetector
 from orbitops.analytics.metrics import anomaly_counts
@@ -20,7 +20,12 @@ LOGGER = logging.getLogger("orbitops")
 def build_parser() -> argparse.ArgumentParser:
     """Construct the CLI parser separately so its behavior can be tested."""
     parser = argparse.ArgumentParser(prog="orbitops", description="OrbitOps telemetry data lab")
-    parser.add_argument("--data-dir", type=Path, default=Path("data"), help="mutable data directory")
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=Path("data"),
+        help="mutable data directory",
+    )
     parser.add_argument("--verbose", action="store_true")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -43,7 +48,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run one CLI command and return a process-friendly exit code."""
     args = build_parser().parse_args(argv)
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(levelname)s %(message)s",
+    )
     paths = AppPaths(args.data_dir)
     paths.ensure()
 
@@ -72,7 +80,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         parquet_path = paths.processed_dir / "telemetry.parquet"
         write_parquet(rows, parquet_path)
         DuckDBTelemetryRepository(paths.database).replace(rows)
-        print(_format_ingestion(result.stats.received, result.stats.valid, result.stats.invalid, result.stats.duplicates))
+        print(
+            _format_ingestion(
+                result.stats.received,
+                result.stats.valid,
+                result.stats.invalid,
+                result.stats.duplicates,
+            )
+        )
         print(f"Parquet: {parquet_path}")
         print(f"DuckDB:  {paths.database}")
         print(f"Anomalies: {len(anomalies):,}")
@@ -85,7 +100,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     if args.command == "status":
-        print(json.dumps({"database": str(paths.database), "rows": repository.row_count()}, indent=2))
+        print(
+            json.dumps(
+                {"database": str(paths.database), "rows": repository.row_count()},
+                indent=2,
+            )
+        )
         return 0
 
     summary = repository.fleet_summary()

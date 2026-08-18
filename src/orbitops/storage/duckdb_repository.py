@@ -7,13 +7,13 @@ from typing import Any
 
 def write_parquet(rows: Sequence[dict[str, Any]], path: Path) -> int:
     """Persist analytical rows as a portable columnar Parquet file."""
-    import pyarrow as pa
-    import pyarrow.parquet as pq
+    import pyarrow as pa  # type: ignore[import-untyped]
+    import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
     path.parent.mkdir(parents=True, exist_ok=True)
     table = pa.Table.from_pylist(list(rows))
     pq.write_table(table, path)
-    return table.num_rows
+    return int(table.num_rows)
 
 
 class DuckDBTelemetryRepository:
@@ -34,7 +34,7 @@ class DuckDBTelemetryRepository:
             connection.execute(
                 "CREATE OR REPLACE TABLE telemetry AS SELECT * FROM incoming_telemetry"
             )
-        return table.num_rows
+        return int(table.num_rows)
 
     def fleet_summary(self) -> list[dict[str, Any]]:
         """Summarize battery, thermal and signal health using visible SQL."""
