@@ -47,10 +47,10 @@ jobs:
   airflow:
     runs-on: ubuntu-latest
     env:
-      AIRFLOW_HOME: ${{ runner.temp }}/airflow
+      AIRFLOW_HOME: /tmp/orbitops-airflow
       AIRFLOW__CORE__DAGS_FOLDER: ${{ github.workspace }}/dags
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      ORBITOPS_DATA_DIR: ${{ runner.temp }}/orbitops-data
+      ORBITOPS_DATA_DIR: /tmp/orbitops-data
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
