@@ -90,15 +90,9 @@ def main() -> int:
     spark_startup, spark = benchmark_spark(records, args.workers)
 
     print(f"records:              {args.records:,}")
-    print(
-        f"local transform:      {local.seconds:.4f}s "
-        f"({local.rows_per_second:,.0f} rows/s)"
-    )
+    print(f"local transform:      {local.seconds:.4f}s ({local.rows_per_second:,.0f} rows/s)")
     print(f"spark startup:        {spark_startup:.4f}s")
-    print(
-        f"spark transform:      {spark.seconds:.4f}s "
-        f"({spark.rows_per_second:,.0f} rows/s)"
-    )
+    print(f"spark transform:      {spark.seconds:.4f}s ({spark.rows_per_second:,.0f} rows/s)")
     print("\nInterpretation: local-mode Spark includes JVM/scheduler overhead.")
     print("Benchmark a real cluster and representative partitioned data before scaling decisions.")
     return 0

@@ -41,12 +41,12 @@ class SparkTelemetryTransformer:
 
     def transform_frame(self, frame: DataFrame) -> DataFrame:
         """Transform an existing distributed DataFrame without collecting it to the driver."""
-        battery_critical = (F.col("battery_voltage") < 7.0) | ~F.col(
-            "battery_temperature"
-        ).between(-10.0, 55.0)
-        battery_degraded = (F.col("battery_voltage") < 7.4) | ~F.col(
-            "battery_temperature"
-        ).between(0.0, 45.0)
+        battery_critical = (F.col("battery_voltage") < 7.0) | ~F.col("battery_temperature").between(
+            -10.0, 55.0
+        )
+        battery_degraded = (F.col("battery_voltage") < 7.4) | ~F.col("battery_temperature").between(
+            0.0, 45.0
+        )
 
         return (
             frame.withColumn(
