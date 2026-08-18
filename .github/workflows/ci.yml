@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - feature/11-airflow-orchestration
+    branches: [main]
   pull_request:
 
 permissions:
