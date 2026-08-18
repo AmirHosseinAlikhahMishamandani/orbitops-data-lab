@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -39,3 +43,69 @@ jobs:
         run: mypy src
       - name: Tests
         run: pytest --cov=orbitops --cov-report=term-missing --cov-report=xml
+
+  airflow:
+    runs-on: ubuntu-latest
+    env:
+      AIRFLOW_HOME: /tmp/orbitops-airflow
+      AIRFLOW__CORE__DAGS_FOLDER: ${{ github.workspace }}/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      ORBITOPS_DATA_DIR: /tmp/orbitops-data
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install Airflow with official constraints
+        shell: bash
+        run: |
+          AIRFLOW_VERSION="3.3.0"
+          PYTHON_VERSION="${{ matrix.python-version }}"
+          CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+          python -m pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
+          python -m pip install -e .
+          python -m pip install "pytest>=8.3,<9"
+          python -m pip check
+      - name: Initialize Airflow metadata database
+        run: airflow db migrate
+      - name: Validate DAG imports
+        shell: bash
+        run: |
+          airflow dags list-import-errors --local --output=json > /tmp/import-errors.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          text = Path("/tmp/import-errors.log").read_text(encoding="utf-8")
+          decoder = json.JSONDecoder()
+          errors = None
+
+          for index, character in enumerate(text):
+              if character != "[":
+                  continue
+              try:
+                  candidate, _ = decoder.raw_decode(text[index:])
+              except json.JSONDecodeError:
+                  continue
+              if isinstance(candidate, list):
+                  errors = candidate
+                  break
+
+          if errors is None:
+              raise SystemExit(
+                  "Airflow import-error command did not emit a JSON list. "
+                  f"Raw output: {text!r}"
+              )
+          if errors:
+              raise SystemExit(f"Airflow DAG import errors: {errors}")
+          PY
+      - name: Validate DAG task graph
+        run: airflow tasks list orbitops_telemetry_pipeline
+      - name: Airflow DAG tests
+        run: pytest -q tests/airflow

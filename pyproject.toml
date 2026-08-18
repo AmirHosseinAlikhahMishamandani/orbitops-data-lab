@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "orbitops-data-lab"
-version = "0.2.0"
+version = "0.3.0"
 description = "From raw satellite telemetry to trusted, queryable, anomaly-aware data."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -38,6 +38,7 @@ packages = ["src/orbitops"]
 addopts = "--strict-markers --strict-config -ra"
 testpaths = ["tests"]
 markers = [
+  "airflow: tests that require an Apache Airflow installation",
   "integration: end-to-end tests that exercise storage dependencies",
   "spark: tests that require the optional PySpark runtime and Java",
 ]
